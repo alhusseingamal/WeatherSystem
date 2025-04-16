@@ -1,0 +1,215 @@
+Definitions:
+    Dependency Injection (DI):
+        a design pattern in which an object receives its dependencies (i.e., required components or services) from an external source, 
+        rather than creating them itself. This promotes loose coupling and makes the code more modular, testable, and maintainable.
+
+Annotations:
+    @Component: added before a class name
+        Registers as a Spring Bean: Marks the class as a Spring-managed component within the application context.
+        Enables Dependency Injection: Allows the class to be injected into other components using annotations like @Autowired.
+        Discovered via Component Scanning: Automatically detected by Spring during classpath scanning.
+        Generic Stereotype: Can be used for any purpose, but specialized annotations like @Service, @Repository, 
+        or @Controller may better define the role of the class.
+
+    @PostConstruct:
+        Indicates that the start() method should be executed immediately after the bean is initialized by Spring.
+        Used for post-construction initialization. An example is starting a TCP server immediately after running the application.
+
+    @Autowired:
+        Injects dependencies into the class automatically.
+        Ensures that the class is correctly instantiated with its required components.
+
+    @Configuration
+        Marks a class as a configuration class that defines one or more Spring beans. 
+        It's used to configure and create beans programmatically, typically replacing XML-based configuration.
+        When the main application runs, Spring scans for @Configuration classes.
+        An @Configuration class can define beans to be managed by the Spring Container.
+    
+    @SpringBootApplication
+        It marks the annotated class as the main entry point of the Spring Boot Application.
+        This annotation is a combination of:
+            @Configuration: Declares this class as a configuration class.
+            @EnableAutoConfiguration: Enables Spring Boot’s auto-configuration mechanism, automatically setting up beans based on dependencies.
+            @ComponentScan: Enables component scanning to discover beans (e.g., classes annotated with @Component, @Service, etc.).
+    
+    @RestController
+        Marks the class as a Spring REST controller, which automatically combines @Controller and @ResponseBody.
+        Enables handling HTTP requests and returning JSON responses.
+    
+    @Bean
+        Applied to methods inside a @Configuration class, marking them as bean definitions.
+        Spring registers the returned object as a bean in the application context.
+        It enables manual creation of beans when automatic detection (via annotations like @Component) isn't suitable.
+        You can customize bean initialization and configuration logic.
+        The container manages the lifecycle of the bean returned by the @Bean method.
+
+    @Service
+        Marks a class as a service layer component.
+        Tells the Spring container this class contains business logic.
+        Plays a key role in the application's architecture by encapsulating the business logic and serving
+            as a bridge between the controller and the repository (or other lower layers).
+        Classes annotated with @Service are automatically discovered during component scanning and registered as Spring Beans, 
+            meaning they are managed by the Spring IoC container.
+        A @Service-annotated class can be injected into other components like controllers or other services using @Autowired.
+        Encapsulates business logic, separating it from the controller (which handles HTTP requests) and the repository (which interacts with the database).
+        
+        Important Note: If two classes declare an object of a class annotated with @Service, they receive the same instance of that object. 
+        This is because @Service-annotated classes are managed by the Spring container as singleton beans by default.
+        In the singleton scope, the Spring container creates only one instance of the @Service-annotated class for the entire application context.
+    
+
+APIs
+    HttpRequest.newBuilder()
+    Purpose: Creates a new instance of the HttpRequest.Builder.
+    Builder Pattern: This allows you to configure the request step by step before finally building it into a complete HttpRequest object.
+    Why Builder?:
+    Builder makes it easier to configure requests with various attributes (e.g., URI, headers, method, body).
+    It avoids complex constructors with too many parameters.
+
+
+Note: Runnable-type classes are used for threading, and are often instantiated explicitly
+
+
+Server Files:
+    
+    WeatherApplication.java: application main entry point
+    
+    TcpServerStarter.java: starts the server, listens to client requests, and initiates separate threads to handle incoming clients
+    
+    TcpServerConfig.java: binds the server to TCP_PORT=12345
+
+    TcpConnectionHandler.java: handles a sensor client, reads inputs from console, acknowledges data reception to sensors, and saves data to database
+    
+    WeatherDataService.java: serves as the thread-safe data repository for your weather monitoring system, 
+        acting as the central hub for storing and managing weather data received from sensors.
+        - Maintains an in-memory store of the latest weather readings using a ConcurrentHashMap
+        - Uses ConcurrentHashMap to handle concurrent access from:
+            1. Multiple TCP sensor threads (writing data)
+            2. HTTP client threads (reading data)
+        - ConcurrentHashMap ensures thread safety for concurrent HTTP and TCP requests.
+        It acts as a database. In larger applications, it would be replaced with a database.
+        
+    
+    WeatherData.java: Datamodel of the weather data exchanged throughout the application
+
+    WeatherController.java: Spring REST controller, exposes endpoints to manage and retrieve weather data
+
+
+Sensor Files:
+    WeatherSensor.java:
+        Implements a console-based client that connects to the TCP server.
+        Allow users to enter a city name and a value for temperature and humidity.
+        Sends the details entered and the timestamp to the server.
+        Receives an acknowledgement from the server.
+
+Client Files:
+    WeatherClient.java
+        Take a city name from the user through the console. 
+        Send a GET request to the server to fetch the weather information of the city. 
+        Display the weather (temperature and humidity) in the console. 
+        If no data exists for the requested city, the server should return "No data available"
+
+
+
+Extra Notes
+APIs
+-------------------------------------------
+HttpRequest request = HttpRequest.newBuilder().uri(uri).GET().build();
+
+Purpose
+This code creates an HTTP GET request using the HttpRequest class, which is part of the java.net.http package introduced in Java 11.
+It uses the builder pattern to construct a request step by step.
+
+1. HttpRequest.newBuilder()
+Purpose: Creates a new instance of the HttpRequest.Builder.
+    Builder Pattern: This allows you to configure the request step by step before finally building it into a complete HttpRequest object.
+    Why Builder?:
+    Builder makes it easier to configure requests with various attributes (e.g., URI, headers, method, body).
+    It avoids complex constructors with too many parameters.
+
+2. .uri(uri)
+    Purpose: Sets the URI (Uniform Resource Identifier) of the request.
+    Parameter uri: This is an object of the class java.net.URI, which represents the endpoint to which the HTTP request will be sent.
+        For example, uri might be https://example.com/weather/Cairo.
+    Validation: The builder checks if the uri is well-formed. If the URI is invalid (e.g., contains illegal characters), 
+        a URISyntaxException will be thrown when the URI is created.
+
+3. .GET()
+    Purpose: Sets the HTTP method to GET.
+    Why GET?: HTTP GET is used to retrieve data from the server, such as fetching weather information.
+    Other Methods: You could use other methods like .POST(), .PUT(), etc., depending on the type of request.
+
+4. .build()
+    Purpose: Finalizes the construction of the HttpRequest object.
+    Result: Returns an immutable HttpRequest instance with all the configurations applied (URI and method in this case).
+
+Why Immutable?:
+    Immutable objects are thread-safe and cannot be changed after construction, ensuring consistency during request execution.
+
+Example of Resulting Request
+    If uri = https://example.com/weather/Cairo, the resulting HTTP request will look like:
+    Request Method: GET
+    Request URI: https://example.com/weather/Cairo
+    This constructed HttpRequest can then be sent using an HttpClient to fetch the response.
+
+Advantages of Using the Builder Pattern
+    Readability: Code is easier to follow and modify.
+    Flexibility: Additional attributes like headers can be added without changing method calls drastically.
+    Thread-Safety: Built objects are immutable, ensuring safe use in multi-threaded environments.
+-------------------------------------------
+
+
+-------------------------------------------
+HttpResponse<String> response = httpClient.send( request, HttpResponse.BodyHandlers.ofString());
+
+
+
+1. HttpResponse<String>
+    HttpResponse: A class in the java.net.http package introduced in Java 11, which represents the response received from an HTTP request.
+    <String>: Indicates that the response body will be handled as a String.
+        This generic type parameter allows you to specify how the response content should be processed (e.g., as String, ByteArray, etc.).
+
+2. httpClient.send()
+    Purpose: Sends the HTTP request synchronously (blocks the current thread until the response is received).
+    Parameters:
+        request: The HttpRequest object that defines the request being sent (e.g., HTTP method, URI, etc.).
+        HttpResponse.BodyHandlers.ofString(): A body handler that determines how to handle the response body (more details below).
+
+3. HttpResponse.BodyHandlers.ofString()
+    Purpose: A predefined body handler that converts the response body into a String.
+    Behavior:Reads the response body (e.g., JSON, plain text, or HTML) as a String and stores it in response.body().
+        Suitable for handling text-based content.
+
+4. Returned response
+    The httpClient.send() method returns an instance of HttpResponse<String>, which contains:
+    Status Code: The HTTP status code (e.g., 200 OK, 404 Not Found).
+    Headers: The response headers (e.g., content type, content length).
+    Body: The actual content of the response, as a String (retrieved via response.body()).
+
+Full Flow
+    A HttpRequest is created (e.g., with a URI and GET method).
+    The httpClient.send() method sends the request to the specified server.
+    The server responds with a status, headers, and body.
+    The body handler (HttpResponse.BodyHandlers.ofString()) converts the body into a String, which is included in the HttpResponse<String> object.
+
+Note:
+    Synchronous Behavior: This method blocks the thread until the response is received. If you want asynchronous handling, you'd use httpClient.sendAsync().
+
+    When to Use Synchronous httoClient.send() Instead:
+        When simplicity is preferred, and you don't need parallel or non-blocking behavior.
+        In small-scale or single-threaded applications where blocking the thread doesn't affect performance.
+
+    When to Use httpClient.sendAsync():
+        Non-blocking Operations: If you want your application to remain responsive while waiting for a response from the server, 
+            especially in GUI applications or systems handling multiple requests concurrently.
+        
+        Concurrent Requests: When sending multiple HTTP requests in parallel (e.g., fetching data from different APIs simultaneously).
+        
+        Improving Performance: In high-throughput systems, asynchronous operations prevent threads from being unnecessarily blocked, improving system efficiency.
+
+        Server-Side Applications:   For applications where multiple clients are served concurrently, 
+            sendAsync() can handle each client request without blocking threads for each one.
+        
+        Chaining Tasks with CompletableFuture: sendAsync() returns a CompletableFuture, which allows you to define further actions 
+            (e.g., processing the response) without blocking.
+-------------------------------------------

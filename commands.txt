@@ -1,0 +1,30 @@
+// Displays the Maven version and environment details.
+$ mvn -v
+
+// Removes previously generated build files like classes and artifacts.
+// Used to start with a clean build environment.
+$ mvn clean
+
+// Compiles the project's source code into bytecode.
+// Does not package or test the project.
+$ mvn compile
+
+// Combines the cleaning phase and compilation phase.
+// Ensures old artifacts are cleaned before compiling.
+$ mvn clean compile
+
+// Packages the compiled code into a deployable artifact (e.g., .jar or .war).
+// Includes phases like testing before packaging.
+$ mvn clean package
+
+// Executes a Java application from the project's source.
+// Requires a defined main class in the Maven configuration.
+$ mvn exec:java
+
+// Starts a Spring Boot application.
+// Requires the project to have Spring Boot set up.
+$ mvn spring-boot:run
+
+// Combines the cleaning phase with starting a Spring Boot application.
+// Ensures old artifacts are cleaned before running the application.
+$ mvn clean spring-boot:run

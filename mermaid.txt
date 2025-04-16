@@ -1,0 +1,32 @@
+1. TCP Server
+sequenceDiagram
+    participant Spring
+    participant TcpServerConfig
+    participant TcpServerStarter
+
+    Spring->>TcpServerConfig: Call serverSocket() during startup
+    TcpServerConfig->>ServerSocket: new ServerSocket(8080)
+    Spring->>TcpServerStarter: Inject ServerSocket bean
+    TcpServerStarter->>ServerSocket: Start accept() loop in new thread
+
+
+2. Flow of Data
+a. From Sensors (TCP):
+sequenceDiagram
+    participant Sensor
+    participant TcpConnectionHandler
+    participant WeatherDataService
+    Sensor->>TcpConnectionHandler: "London|23.5|65|2023-11-20..."
+    TcpConnectionHandler->>WeatherDataService: updateWeatherData()
+    WeatherDataService->>ConcurrentHashMap: Store {"London": WeatherData}
+
+b. ToClients (HTTP):
+sequenceDiagram
+    participant HTTPClient
+    participant WeatherController
+    participant WeatherDataService
+    HTTPClient->>WeatherController: GET /api/weather/London
+    WeatherController->>WeatherDataService: getLatestData("London")
+    WeatherDataService->>ConcurrentHashMap: Retrieve value for "London"
+    WeatherDataService-->>WeatherController: WeatherData
+    WeatherController-->>HTTPClient: JSON response

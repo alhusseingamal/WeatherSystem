@@ -1,0 +1,74 @@
+-- Local Testing --
+
+terminal1: Server
+    cd server
+    mvn clean compile
+    mvn spring-boot:run
+
+
+terminal2: Sensor
+    cd sensor
+    mvn clean compile
+    mvn exec:java
+
+terminal3: Client
+    cd client
+    mvn clean compile
+    mvn exec:java
+
+scenario:
+    server connects
+    sensor connects
+    client connects
+    client asks for "cairo"
+    it receives "no data available" message
+    sensor updates data for dubai
+    sensor updates data for cairo
+    client asks for cairo data
+    server responds with cairo data
+    ....
+
+
+You can add multiple sensors and multiple clients
+
+
+-- LAN Testing --
+
+Step 1: Find Server's LAN IP Address
+    # Windows:
+        ipconfig | findstr "IPv4"
+
+    # Linux/Mac:
+        ifconfig | grep "inet "
+
+Step 2: Configure Server, Sensor, and client
+    # check server address and port for client in application.properties
+    # check server ip and port for sensor in sensor-config.properties
+    # check url for client in client-config.properties
+
+Step 3: Build Source code into packages
+    Server
+        mvn clean package
+        ls target/weatherhub-server-*.jar
+    Sensor
+        mvn clean package
+        ls target/weatherhub-sensor-*.jar
+    Client
+        mvn clean package
+        ls target/weatherhub-client-*.jar
+    OR, in project root directory (only if the three sub-folders are included as within <modules> statement in the pom.xml in project root directory):
+        mvn clean package
+
+Step 4: Start Components
+# Server: run on machine1, should run first
+    java -jar target/weatherhub-server-1.0-SNAPSHOT.jar
+# Sensor: run on machine 2
+    mvn exec:java
+# Client: run on machine1 or machine2, or machine3
+    mvn exec:java
+
+Test HTTP Endpoint from any machine:
+    bash:
+        curl http://192.168.1.7:8080/api/weather/all
+    or in go to the following URL using any browser:
+        http://192.168.1.7:8080/api/weather/all
